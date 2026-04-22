@@ -18,3 +18,8 @@ management:
           include: "*"
 terraform:
   dir: /home/hardik/terraform
+  
+jenkins:
+  url: http://localhost:8080/job/deploy/build
+  user: admin
+  token: myjenkinstoken
