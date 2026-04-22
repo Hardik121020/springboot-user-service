@@ -177,3 +177,97 @@ springboot-user-service/
     ├── terraform.tf
     └── variables.tf
 ```
+---
+
+## ⚙️ **Setup & Run**
+
+### 1. **Database**
+```sql
+CREATE TABLE user (
+    user_id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    created_at TIMESTAMP NOT NULL
+);
+```
+
+## **Build & Run for API**
+```
+mvn clean package
+java -jar jars/a1-0.0.1-SNAPSHOT.jar
+```
+
+## **API Usage**
+
+### 1. **Create User**
+```
+curl -X POST http://localhost:8080/user \
+     -H "Content-Type: application/json" \
+     -d '{
+           "name": "Hardik Bansal",
+           "email": "hardik@example.com",
+           "phone": "9876543210"
+         }'
+
+```
+
+### 2. **Get User by ID**
+```
+curl http://localhost:8080/user/{id}
+```
+
+## **🐳 Docker**
+```
+docker build -t user-service .
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/postgres \
+  -e SPRING_DATASOURCE_USERNAME=postgres \
+  -e SPRING_DATASOURCE_PASSWORD=mysecretpassword \
+  user-metadata-service
+```
+## ⚙️ **Setup & Run for Backend Service**
+### 1. **Backend Service**
+```
+mvn clean package
+java -jar target/platform-engineering-assignment-0.0.1-SNAPSHOT.jar \
+  -Dterraform.dir=/home/hardik/terraform \
+  -Djenkins.url=http://localhost:8080/job/deploy/build \
+  -Djenkins.user=admin \
+  -Djenkins.token=myjenkinstoken
+```
+
+### 2. **API Usage**
+- **Register Service**
+```
+curl -X POST http://localhost:8080/platform/register-service \
+     -H "Content-Type: application/json" \
+     -d '{
+           "serviceName": "user-service",
+           "teamName": "platform-team",
+           "repoUrl": "https://github.com/example/user-service.git"
+         }'
+```
+### 3. **Terraform Automation**
+```
+terraform apply -auto-approve \
+  -var service_name=user-service \
+  -var team_name=platform-team \
+  -var repo_url=https://github.com/example/user-service.git
+```
+### 4. **Jenkins Trigger**
+**Backend calls Jenkins REST API after Terraform completes:**
+```
+jenkins:
+  url: http://localhost:8080/job/deploy/build
+  user: admin
+  token: myjenkinstoken
+```
+
+## **🛠️ Automation Flow**
+
+1. **User hits backend API (POST /platform/register-service).**
+2. **Backend triggers Terraform → provisions infra + generates Jenkinsfile.**
+3. **Backend calls Jenkins REST API → Jenkins job starts.**
+4. **Jenkins pipeline executes → builds, scans, pushes image, updates K8s manifest, deploys.**
+5. **Metrics & logs collected for observability.**
