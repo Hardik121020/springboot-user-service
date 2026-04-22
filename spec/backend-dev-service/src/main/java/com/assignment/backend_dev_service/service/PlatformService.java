@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,9 +19,20 @@ public class PlatformService {
 
     private final ServiceRepository repository;
 
-    // Inject terraform directory path from application.yml or command line
+    // Inject terraform directory path from application.yml
     @Value("${terraform.dir:/opt/terraform/project}")
     private String terraformDir;
+
+    // Inject Jenkins URL from application.yml
+    @Value("${jenkins.url}")
+    private String jenkinsUrl;
+
+    // Inject Jenkins credentials (token or user:token)
+    @Value("${jenkins.user}")
+    private String jenkinsUser;
+
+    @Value("${jenkins.token}")
+    private String jenkinsToken;
 
     public PlatformService(ServiceRepository repository) {
         this.repository = repository;
@@ -55,12 +69,35 @@ public class PlatformService {
             if (exitCode != 0) {
                 return new ServiceResponse(requestId, "FAILED");
             }
+
+            // Trigger Jenkins job after successful Terraform apply
+            triggerJenkinsJob();
+
         } catch (Exception e) {
             e.printStackTrace();
             return new ServiceResponse(requestId, "ERROR");
         }
 
         return new ServiceResponse(requestId, "SUCCESS");
+    }
+
+    private void triggerJenkinsJob() {
+        try {
+            URL url = new URL(jenkinsUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+
+            // Basic Auth with Jenkins user/token
+            String auth = jenkinsUser + ":" + jenkinsToken;
+            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+            conn.setRequestProperty("Authorization", "Basic " + encodedAuth);
+
+            int responseCode = conn.getResponseCode();
+            System.out.println("Triggered Jenkins job, response code: " + responseCode);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public List<ServiceMetadata> getAllServices() {
