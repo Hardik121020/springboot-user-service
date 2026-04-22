@@ -1,0 +1,1 @@
+A Spring Boot microservice for user management with REST APIs, Micrometer metrics (total requests, success/failure counts, latency), structured logging, and PostgreSQL integration. Fully containerized with Docker and orchestrated via Docker Compose.
