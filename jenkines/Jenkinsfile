@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "${service_name}"
+        TEAM_NAME    = "${team_name}"
+        REPO_URL     = "${repo_url}"
+        REGISTRY     = "your-account-id.dkr.ecr.ap-south-1.amazonaws.com/${service_name}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: "${REPO_URL}"
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${REGISTRY}:latest ."
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                script {
+                    // Example: Trivy scan
+                    sh "trivy image ${REGISTRY}:latest || true"
+                }
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                script {
+                    sh """
+                    aws ecr get-login-password --region ap-south-1 \
+                      | docker login --username AWS --password-stdin ${REGISTRY}
+                    docker push ${REGISTRY}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Update K8s Manifest') {
+            steps {
+                script {
+                    sh """
+                    sed -i 's|IMAGE_PLACEHOLDER|${REGISTRY}:latest|g' k8s/deployment.yaml
+                    """
+                }
+            }
+        }
+
+        stage('Deploy via ArgoCD') {
+            steps {
+                script {
+                    sh "argocd app sync ${SERVICE_NAME}"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline for ${SERVICE_NAME} completed successfully."
+        }
+        failure {
+            echo "Pipeline for ${SERVICE_NAME} failed."
+        }
+    }
+}
