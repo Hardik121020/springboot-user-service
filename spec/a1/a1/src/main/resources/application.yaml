@@ -1,0 +1,44 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: a1
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+  resilience4j:
+    retry:
+      instances:
+        dbRetry:
+          maxAttempts: 3
+          waitDuration: 500ms
+          intervalFunction:
+            type: exponential_backoff
+            initialInterval: 500ms
+            multiplier: 2
+            randomizationFactor: 0.5
+    circuitbreaker:
+      instances:
+        dbCircuitBreaker:
+          failureRateThreshold: 50
+          waitDurationInOpenState: 30s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: user-service
