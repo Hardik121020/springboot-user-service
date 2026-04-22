@@ -35,17 +35,26 @@ The service must expose two APIs:
 ---
 
 ## 📂 **Project Structure**
-src/main/java/com/assignment/backend_dev_service/
-├── UserMetadataServiceApplication.java
-├── controller/UserController.java
-├── model/User.java
-├── repository/UserRepository.java
-├── service/UserService.java
-└── config/ResilienceConfig.java
+user-metadata-service/
+ ├── pom.xml
+ ├── Dockerfile
+ ├── src/
+ │   ├── main/
+ │   │   ├── java/com/assignment/backend_dev_service/
+ │   │   │   ├── UserMetadataServiceApplication.java
+ │   │   │   ├── controller/
+ │   │   │   │    └── UserController.java
+ │   │   │   ├── model/
+ │   │   │   │    └── User.java
+ │   │   │   ├── repository/
+ │   │   │   │    └── UserRepository.java
+ │   │   │   ├── service/
+ │   │   │   │    └── UserService.java
+ │   │   │   └── config/
+ │   │   │        └── ResilienceConfig.java
+ │   │   └── resources/
+ │   │        ├── application.yml
+ │   │        └── logback-spring.xml
+ │   └── test/java/com/assignment/backend_dev_service/
+ │        └── UserControllerTest.java
 
-src/main/resources/
-├── application.yml
-└── logback-spring.xml
-
-Dockerfile
-pom.xml
